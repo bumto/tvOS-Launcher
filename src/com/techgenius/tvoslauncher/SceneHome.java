@@ -1900,6 +1900,7 @@ final class SceneHome {
         }
 
         LinearLayout row = null;
+        int tileH = Math.round(tileSize * IconShape.aspect(host));
         for (int i = 0; i < dockEntries.size(); i++) {
             if (i % cols == 0) {
                 row = new LinearLayout(host);
@@ -1913,7 +1914,7 @@ final class SceneHome {
                 dockBox.addView(row, rlp);
             }
             View tile = buildDockTile(dockEntries.get(i), i, tileSize, scale);
-            LinearLayout.LayoutParams tlp = new LinearLayout.LayoutParams(tileSize, tileSize);
+            LinearLayout.LayoutParams tlp = new LinearLayout.LayoutParams(tileSize, tileH);
             if (i % cols != 0) tlp.leftMargin = tileGap;
             row.addView(tile, tlp);
             dockTiles.add(tile);
@@ -1932,12 +1933,13 @@ final class SceneHome {
         tile.setFocusable(true);
         tile.setClickable(true);
         tile.setLongClickable(true);
+        int height = Math.round(size * IconShape.aspect(host));
         tile.setPivotX(size / 2f);
-        tile.setPivotY(size / 2f);
+        tile.setPivotY(height / 2f);
 
         boolean isGear = GEAR_KEY.equals(a.key);
         boolean isMore = MORE_KEY.equals(a.key);
-        float rad = IconShape.radius(host, size);
+        float rad = IconShape.radius(host, height);
         boolean whiteCorners = isMore;
 
         if (isGear || isMore) {
@@ -2290,7 +2292,8 @@ final class SceneHome {
         final int cellW = dp(116);
         final int cellH = dp(102);
         final int iconSz = dp(60);
-        final float iconRad = IconShape.radius(host, iconSz);
+        final int iconH = Math.round(iconSz * IconShape.aspect(host));
+        final float iconRad = IconShape.radius(host, iconH);
         LinearLayout curRow = null;
         final List<View> cells = new ArrayList<>();
 
@@ -2343,7 +2346,7 @@ final class SceneHome {
             }
             final Drawable focusRing = createIconFocusRingDrawable(iconRad, dp(2.2f), sq != null && hasWhiteCorners(sq));
 
-            cell.addView(iconBox, new LinearLayout.LayoutParams(iconSz, iconSz));
+            cell.addView(iconBox, new LinearLayout.LayoutParams(iconSz, iconH));
 
             final TextView lbl = new TextView(host);
             Ui.textSize(lbl, 10.5f);

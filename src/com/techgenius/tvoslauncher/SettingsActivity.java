@@ -1269,7 +1269,8 @@ public class SettingsActivity extends Activity {
 
     private String iconShapeLabel(String key) {
         if (IconShape.CIRCLE.equals(key)) return tr("Circle", "Daire");
-        if (IconShape.RECTANGLE.equals(key)) return tr("Rectangle", "Dikdörtgen");
+        if (IconShape.RECTANGLE.equals(key)) return tr("Rounded square", "Kare yuvarlak");
+        if (IconShape.TV_RECTANGLE.equals(key)) return tr("TV rectangle (16:9)", "TV dikdörtgen (16:9)");
         return tr("Squircle", "Squircle");
     }
 
@@ -1280,8 +1281,9 @@ public class SettingsActivity extends Activity {
         String cur = IconShape.get(this);
         String[][] opts = {
                 {IconShape.CIRCLE, tr("Circle", "Daire")},
-                {IconShape.RECTANGLE, tr("Rectangle", "Dikdörtgen")},
-                {IconShape.SQUIRCLE, tr("Squircle", "Squircle")}
+                {IconShape.SQUIRCLE, tr("Squircle", "Squircle")},
+                {IconShape.RECTANGLE, tr("Rounded square", "Kare yuvarlak")},
+                {IconShape.TV_RECTANGLE, tr("TV rectangle (16:9)", "TV dikdörtgen (16:9)")}
         };
         for (String[] pair : opts) {
             final String k = pair[0];

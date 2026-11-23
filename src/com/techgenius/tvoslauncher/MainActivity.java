@@ -1195,7 +1195,8 @@ public class MainActivity extends Activity {
         tile.setLongClickable(true);
         FrameLayout iconHost = tile;
         int iconSize = Math.min(cardW, cardH);
-        float iconRadius = IconShape.radius(this, iconSize);
+        int iconH = Math.round(iconSize * IconShape.aspect(this));
+        float iconRadius = IconShape.radius(this, inDock ? iconH : cardH);
         if (inDock) {
             iconHost = new FrameLayout(this);
             GradientDrawable iconBg = new GradientDrawable();
@@ -1204,7 +1205,7 @@ public class MainActivity extends Activity {
             iconHost.setBackground(iconBg);
             iconHost.setOutlineProvider(roundedOutline(new float[]{iconRadius}));
             iconHost.setClipToOutline(true);
-            tile.addView(iconHost, new FrameLayout.LayoutParams(iconSize, iconSize, Gravity.CENTER));
+            tile.addView(iconHost, new FrameLayout.LayoutParams(iconSize, iconH, Gravity.CENTER));
         } else {
             GradientDrawable bg = new GradientDrawable();
             bg.setCornerRadius(iconRadius);
