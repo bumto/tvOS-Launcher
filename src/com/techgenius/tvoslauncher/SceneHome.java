@@ -10,6 +10,7 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.LinearGradient;
 import android.graphics.Outline;
+import android.graphics.Path;
 import android.graphics.Paint;
 import android.graphics.Rect;
 import android.graphics.RectF;
@@ -2900,7 +2901,9 @@ final class SceneHome {
         Canvas cv = new Canvas(out);
         Paint p = new Paint(Paint.ANTI_ALIAS_FLAG | Paint.FILTER_BITMAP_FLAG);
         float r = size * 0.22f;
-        cv.clipRoundRect(new RectF(0, 0, size, size), r, r);
+        Path path = new Path();
+        path.addRoundRect(new RectF(0, 0, size, size), r, r, Path.Direction.CW);
+        cv.clipPath(path);
         p.setColor(0xFF2C2D33);
         cv.drawRect(0, 0, size, size, p);
         Bitmap gear = Glyphs.get("gear", Math.round(size * 0.52f), 0xFFF4F4F6);
