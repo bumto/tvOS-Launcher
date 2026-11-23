@@ -1937,7 +1937,7 @@ final class SceneHome {
 
         boolean isGear = GEAR_KEY.equals(a.key);
         boolean isMore = MORE_KEY.equals(a.key);
-        float rad = isGear || isMore ? size / 2f : size * 0.22f;
+        float rad = size * 0.22f;
         boolean whiteCorners = isMore;
 
         if (isGear || isMore) {
