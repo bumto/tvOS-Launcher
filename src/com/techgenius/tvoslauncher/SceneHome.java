@@ -1934,10 +1934,10 @@ final class SceneHome {
         tile.setLongClickable(true);
         tile.setPivotX(size / 2f);
         tile.setPivotY(size / 2f);
-        float rad = size / 2f;
 
         boolean isGear = GEAR_KEY.equals(a.key);
         boolean isMore = MORE_KEY.equals(a.key);
+        float rad = isGear || isMore ? size / 2f : size * 0.22f;
         boolean whiteCorners = isMore;
 
         if (isGear || isMore) {
