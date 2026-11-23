@@ -222,6 +222,7 @@ public class MainActivity extends Activity {
     ObjectAnimator wiggle;
     AppEntry shelfEntry;
     BroadcastReceiver pkgReceiver;
+    BroadcastReceiver iconShapeReceiver;
 
     /** Full-screen card that zooms out of a tile when an app is launched. */
     View launchOverlay;
@@ -352,6 +353,12 @@ public class MainActivity extends Activity {
             }
         };
         registerReceiver(wakeReceiver, new IntentFilter(Intent.ACTION_SCREEN_ON));
+        iconShapeReceiver = new BroadcastReceiver() {
+            @Override public void onReceive(Context c, Intent i) {
+                reload(null);
+            }
+        };
+        registerReceiver(iconShapeReceiver, new IntentFilter(IconShape.ACTION_CHANGED));
         LocalAdb.ensureKeepAliveWatchdog(this);
         AppUpdater.cleanupUpdatesFolderOnStartup(this);
     }
@@ -671,6 +678,7 @@ public class MainActivity extends Activity {
             }
         }
         if (wakeReceiver != null) unregisterReceiver(wakeReceiver);
+        if (iconShapeReceiver != null) unregisterReceiver(iconShapeReceiver);
         handler.removeCallbacksAndMessages(null);
         stopSway(null);
         io.shutdownNow();
@@ -1187,21 +1195,22 @@ public class MainActivity extends Activity {
         tile.setLongClickable(true);
         FrameLayout iconHost = tile;
         int iconSize = Math.min(cardW, cardH);
+        float iconRadius = IconShape.radius(this, iconSize);
         if (inDock) {
             iconHost = new FrameLayout(this);
             GradientDrawable iconBg = new GradientDrawable();
-            iconBg.setCornerRadius(cardRadius);
+            iconBg.setCornerRadius(iconRadius);
             iconBg.setColor(a.banner != null ? 0xFF1C1C1E : a.color);
             iconHost.setBackground(iconBg);
-            iconHost.setOutlineProvider(roundedOutline(new float[]{cardRadius}));
+            iconHost.setOutlineProvider(roundedOutline(new float[]{iconRadius}));
             iconHost.setClipToOutline(true);
             tile.addView(iconHost, new FrameLayout.LayoutParams(iconSize, iconSize, Gravity.CENTER));
         } else {
             GradientDrawable bg = new GradientDrawable();
-            bg.setCornerRadius(cardRadius);
+            bg.setCornerRadius(iconRadius);
             bg.setColor(a.banner != null ? 0xFF1C1C1E : a.color);
             tile.setBackground(bg);
-            tile.setOutlineProvider(roundedOutline(new float[]{cardRadius}));
+            tile.setOutlineProvider(roundedOutline(new float[]{iconRadius}));
             tile.setClipToOutline(true);
         }
 

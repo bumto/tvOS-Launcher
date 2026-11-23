@@ -1937,7 +1937,7 @@ final class SceneHome {
 
         boolean isGear = GEAR_KEY.equals(a.key);
         boolean isMore = MORE_KEY.equals(a.key);
-        float rad = size * 0.22f;
+        float rad = IconShape.radius(host, size);
         boolean whiteCorners = isMore;
 
         if (isGear || isMore) {
@@ -2290,7 +2290,7 @@ final class SceneHome {
         final int cellW = dp(116);
         final int cellH = dp(102);
         final int iconSz = dp(60);
-        final float iconRad = dp(14.5f);
+        final float iconRad = IconShape.radius(host, iconSz);
         LinearLayout curRow = null;
         final List<View> cells = new ArrayList<>();
 

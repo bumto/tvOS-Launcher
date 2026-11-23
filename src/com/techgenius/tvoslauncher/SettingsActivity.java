@@ -1187,6 +1187,9 @@ public class SettingsActivity extends Activity {
             pageHiddenApps();
             return;
         }
+        row(tr("Icon shape", "Simge şekli"),
+                () -> iconShapeLabel(IconShape.get(this)) + "  " + chev(),
+                () -> openSubMenu("icon_shape"));
         row(tr("Hidden apps", "Gizlenen uygulamalar"),
                 () -> {
                     Set<String> hidden = Profiles.homePrefs(this).getStringSet(MainActivity.PREF_HIDDEN, Collections.emptySet());
@@ -1261,6 +1264,33 @@ public class SettingsActivity extends Activity {
                         },
                         () -> openSubMenu("nuvio_apps"));
             }
+        }
+    }
+
+    private String iconShapeLabel(String key) {
+        if (IconShape.CIRCLE.equals(key)) return tr("Circle", "Daire");
+        if (IconShape.RECTANGLE.equals(key)) return tr("Rectangle", "Dikdörtgen");
+        return tr("Squircle", "Squircle");
+    }
+
+    private void subMenuIconShape() {
+        mainHeadView.setText(tr("Icon shape", "Simge şekli"));
+        backSubMenuRow();
+        section(tr("ICON SHAPE", "SİMGE ŞEKLİ"));
+        String cur = IconShape.get(this);
+        String[][] opts = {
+                {IconShape.CIRCLE, tr("Circle", "Daire")},
+                {IconShape.RECTANGLE, tr("Rectangle", "Dikdörtgen")},
+                {IconShape.SQUIRCLE, tr("Squircle", "Squircle")}
+        };
+        for (String[] pair : opts) {
+            final String k = pair[0];
+            final String n = pair[1];
+            choiceRow(n, null, k.equals(cur), () -> {
+                IconShape.set(this, k);
+                refreshAll();
+                rebuildMainRows();
+            });
         }
     }
 
@@ -2600,6 +2630,8 @@ public class SettingsActivity extends Activity {
             subMenuTopShelf();
         } else if ("nuvio_apps".equals(subId)) {
             subMenuNuvioApps();
+        } else if ("icon_shape".equals(subId)) {
+            subMenuIconShape();
         } else if (subId.startsWith("profile_actions:")) {
             subMenuProfileActions(subId.substring("profile_actions:".length()));
         } else if (subId.startsWith("cp_app:")) {
