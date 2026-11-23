@@ -4180,10 +4180,7 @@ public class MainActivity extends Activity {
         if (!Scenes.isScenesLook(this)) {
             buildGrid();
         }
-        if (sceneHome != null) {
-            sceneHome.invalidateAppLogoCache(null);
-            sceneHome.rebuildDock();
-        }
+        if (sceneHome != null) sceneHome.rebuildDock();
         shelfEntry = null;
         if (Scenes.isScenesLook(this) && sceneHome != null) {
             sceneHome.focusDock(Math.min(sceneHome.focusedDockIdx, Math.max(0, sceneHome.dockTiles.size() - 1)));
