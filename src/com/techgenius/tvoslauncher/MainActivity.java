@@ -1187,13 +1187,19 @@ public class MainActivity extends Activity {
         tile.setLongClickable(true);
         FrameLayout iconHost = tile;
         int iconSize = Math.min(cardW, cardH);
+        boolean classicOriginal = !IconPacks.isActive(this)
+                && !CustomMedia.hasUserAppIcon(this, a.key, a.pkg);
         if (inDock) {
             iconHost = new FrameLayout(this);
-            GradientDrawable circle = new GradientDrawable();
-            circle.setShape(GradientDrawable.OVAL);
-            circle.setColor(a.banner != null ? 0xFF1C1C1E : a.color);
-            iconHost.setBackground(circle);
-            iconHost.setOutlineProvider(ovalOutline());
+            GradientDrawable iconBg = new GradientDrawable();
+            if (classicOriginal) {
+                iconBg.setCornerRadius(cardRadius);
+            } else {
+                iconBg.setShape(GradientDrawable.OVAL);
+            }
+            iconBg.setColor(a.banner != null ? 0xFF1C1C1E : a.color);
+            iconHost.setBackground(iconBg);
+            iconHost.setOutlineProvider(classicOriginal ? roundedOutline(new float[]{cardRadius}) : ovalOutline());
             iconHost.setClipToOutline(true);
             tile.addView(iconHost, new FrameLayout.LayoutParams(iconSize, iconSize, Gravity.CENTER));
         } else {
