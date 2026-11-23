@@ -696,7 +696,7 @@ public class MainActivity extends Activity {
         // soft; a slow drift keeps it alive without a per-frame blur on this weak GPU.
         wallView = new ImageView(this);
         wallView.setScaleType(ImageView.ScaleType.CENTER_CROP);
-        wallStyle = Profiles.homePrefs(this).getString("wallpaper", "photo:tessellated-pavement.jpg");
+        wallStyle = Profiles.homePrefs(this).getString("wallpaper", "aurora");
         if (!Scenes.isScenesLook(this)) {
             setWallpaper(wallStyle);
         }

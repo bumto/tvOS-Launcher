@@ -97,7 +97,7 @@ final class SceneHome {
     private boolean dashboardHiding;
     static final int MAX_SHELF_ITEMS = 5;
     private final Map<String, List<WatchCardData>> pkgWatchCache = new java.util.concurrent.ConcurrentHashMap<>();
-    private final android.util.LruCache<String, Bitmap> shelfThumbs = new android.util.LruCache<>(16);
+    private final android.util.LruCache<String, Bitmap> shelfThumbs = new android.util.LruCache<>(8);
     private View activeShelfTile;
     private String activeShelfPkg;
     private int shelfLoadGen = 0;

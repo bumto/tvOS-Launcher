@@ -339,7 +339,7 @@ public final class Scenes {
     }
 
     public static String getLook(Context c) {
-        return prefs(c).getString("look_mode", LOOK_SCENES);
+        return prefs(c).getString("look_mode", LOOK_CLASSIC);
     }
 
     public static boolean isScenesLook(Context c) {
@@ -655,7 +655,7 @@ public final class Scenes {
     // ─── Classic Appearance Big Clock & Clock Alignment ───
 
     public static boolean isClassicBigClockEnabled(Context c) {
-        return prefs(c).getBoolean("classic_big_clock", true);
+        return prefs(c).getBoolean("classic_big_clock", false);
     }
 
     public static void setClassicBigClockEnabled(Context c, boolean enabled) {
