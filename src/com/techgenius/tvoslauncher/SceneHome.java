@@ -42,7 +42,7 @@ import java.util.Set;
  * - Top-left profile pill switcher ("Person 1 | Person 2")
  * - Top-right frosted glass Moon sleep timer / quick controls button
  * - "Keep watching" horizontal frosted glass notification cards with artwork & progress bars
- * - Bottom frosted glass dock with rounded-square app icons, Settings gear popup, and More (...)
+ * - Bottom frosted glass dock with circular app icons, Settings gear popup, and More (...)
  */
 final class SceneHome {
 
@@ -1934,7 +1934,7 @@ final class SceneHome {
         tile.setLongClickable(true);
         tile.setPivotX(size / 2f);
         tile.setPivotY(size / 2f);
-        float rad = Math.max(dp(6), Math.round(dp(13) * scale));
+        float rad = size / 2f;
 
         boolean isGear = GEAR_KEY.equals(a.key);
         boolean isMore = MORE_KEY.equals(a.key);

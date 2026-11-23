@@ -1200,6 +1200,10 @@ public class MainActivity extends Activity {
         } else {
             iv.setScaleType(ImageView.ScaleType.FIT_CENTER);
             iv.setImageDrawable(a.icon);
+            if (inDock) {
+                iv.setOutlineProvider(ovalOutline());
+                iv.setClipToOutline(true);
+            }
             int s = cardH * 55 / 100;
             tile.addView(iv, new FrameLayout.LayoutParams(s, s, Gravity.CENTER));
         }
@@ -2048,6 +2052,14 @@ public class MainActivity extends Activity {
         return new ViewOutlineProvider() {
             @Override public void getOutline(View v, Outline o) {
                 o.setRoundRect(0, 0, v.getWidth(), v.getHeight(), r[0]);
+            }
+        };
+    }
+
+    ViewOutlineProvider ovalOutline() {
+        return new ViewOutlineProvider() {
+            @Override public void getOutline(View v, Outline o) {
+                o.setOval(0, 0, v.getWidth(), v.getHeight());
             }
         };
     }
