@@ -207,6 +207,11 @@ final class LocalAdb {
         return c != null && c.getSharedPreferences("adb_state", Context.MODE_PRIVATE).getBoolean("paired", false);
     }
 
+    static boolean isRuntimeAdbAvailable(Context c) {
+        if (c == null || !isPaired(c)) return false;
+        return getAdbMode(c) == ADB_MODE_PERSISTENT || isAdbSettingEnabled(c) || portReachable;
+    }
+
     private static void setPaired(Context c, boolean val) {
         if (c == null) return;
         c.getSharedPreferences("adb_state", Context.MODE_PRIVATE).edit().putBoolean("paired", val).apply();
@@ -728,7 +733,7 @@ final class LocalAdb {
                     break;
                 }
             }
-            portReachable = (c == null || getAdbMode(c) == ADB_MODE_PERSISTENT) && open;
+            portReachable = open && (c == null || getAdbMode(c) == ADB_MODE_PERSISTENT || isAdbSettingEnabled(c));
             if (onDone != null) onDone.run();
         }, "adb-probe").start();
     }
@@ -1221,7 +1226,7 @@ final class LocalAdb {
     }
 
     static void forceStopPackagesAsync(Context c, java.util.List<String> pkgs) {
-        if (c == null || getAdbMode(c) == ADB_MODE_SECURE_CLOSE || pkgs == null || pkgs.isEmpty() || !isPaired(c)) return;
+        if (c == null || !isRuntimeAdbAvailable(c) || pkgs == null || pkgs.isEmpty()) return;
         new Thread(() -> {
             StringBuilder sb = new StringBuilder();
             for (String p : pkgs) {

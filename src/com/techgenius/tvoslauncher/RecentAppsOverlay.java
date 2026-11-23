@@ -496,8 +496,8 @@ public final class RecentAppsOverlay {
         tlp.leftMargin = dp(unit, 55);
         root.addView(title, tlp);
 
-        // 2b. Secure ADB Mode warning overlay (Recent Apps clearing requires Persistent ADB Mode)
-        if (LocalAdb.getAdbMode(c) == LocalAdb.ADB_MODE_SECURE_CLOSE) {
+        // 2b. ADB access warning overlay (Recent Apps force-stop requires paired ADB)
+        if (!LocalAdb.isRuntimeAdbAvailable(c)) {
             LinearLayout card = new LinearLayout(c);
             card.setOrientation(LinearLayout.VERTICAL);
             card.setGravity(Gravity.CENTER_HORIZONTAL);
@@ -525,7 +525,7 @@ public final class RecentAppsOverlay {
             card.addView(badge, blp);
 
             TextView heading = new TextView(c);
-            heading.setText(I18n.s(c, "Persistent ADB Mode Required", "Kalıcı ADB Modu Gerekli"));
+            heading.setText(I18n.s(c, "ADB Access Required", "ADB Erişimi Gerekli"));
             heading.setTextColor(Color.WHITE);
             heading.setTypeface(Ui.font(c, "semibold"));
             Ui.textSize(heading, 20f);
@@ -537,8 +537,8 @@ public final class RecentAppsOverlay {
 
             TextView body = new TextView(c);
             body.setText(I18n.s(c,
-                    "Recent Apps Manager cannot clear apps while Secure ADB Mode is active.\n\nEnable Persistent ADB Mode in Settings › Advanced › ADB operating mode to use the Recent Apps feature.",
-                    "Güvenli ADB Modu etkinken Son Uygulamalar Yöneticisi uygulamaları kapatamaz.\n\nSon Uygulamalar özelliğini kullanmak için Ayarlar › Gelişmiş › ADB çalışma modu bölümünden Kalıcı ADB Modunu etkinleştirin."));
+                    "Recent Apps Manager needs one-time ADB pairing to force-stop apps.\n\nEnable ADB debugging and pair tvOS Launcher once, or use Persistent ADB Mode in Settings › Advanced › ADB operating mode.",
+                    "Son Uygulamalar Yöneticisi uygulamaları tamamen kapatmak için bir kez ADB eşleştirmesi gerektirir.\n\nADB hata ayıklamayı açıp tvOS Launcher ile bir kez eşleştirin veya Ayarlar › Gelişmiş › ADB çalışma modu bölümünden Kalıcı ADB Modunu etkinleştirin."));
             body.setTextColor(0xCCFFFFFF);
             body.setTypeface(Ui.font(c, "regular"));
             Ui.textSize(body, 14f);
