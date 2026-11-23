@@ -1091,6 +1091,52 @@ public class PowerService extends AccessibilityService {
         return s != null && Build.VERSION.SDK_INT >= 21 && s.performGlobalAction(GLOBAL_ACTION_POWER_DIALOG);
     }
 
+    /**
+     * Opens the native Android power dialog and clicks the entry whose text/content description
+     * contains one of the given lowercase needles (e.g. "power off", "matikan", "restart").
+     */
+    static boolean showPowerDialogAndClick(final String... needles) {
+        final PowerService s = instance;
+        if (s == null || Build.VERSION.SDK_INT < 21 || needles == null || needles.length == 0) return false;
+        if (!s.performGlobalAction(GLOBAL_ACTION_POWER_DIALOG)) return false;
+        final boolean[] clicked = {false};
+        for (int attempt = 1; attempt <= 8; attempt++) {
+            handler.postDelayed(() -> {
+                if (clicked[0]) return;
+                AccessibilityNodeInfo root = s.getRootInActiveWindow();
+                if (root == null) return;
+                try {
+                    AccessibilityNodeInfo btn = findButtonContains(root, needles);
+                    if (btn != null && btn.performAction(AccessibilityNodeInfo.ACTION_CLICK)) {
+                        clicked[0] = true;
+                    }
+                } finally {
+                    root.recycle();
+                }
+            }, attempt * 250L);
+        }
+        return true;
+    }
+
+    private static AccessibilityNodeInfo findButtonContains(AccessibilityNodeInfo n, String... needles) {
+        if (n == null) return null;
+        String id = n.getViewIdResourceName() != null ? n.getViewIdResourceName().toLowerCase() : "";
+        String txt = n.getText() != null ? n.getText().toString().toLowerCase() : "";
+        String desc = n.getContentDescription() != null ? n.getContentDescription().toString().toLowerCase() : "";
+        for (String s : needles) {
+            if (id.contains(s) || txt.contains(s) || desc.contains(s)) {
+                for (AccessibilityNodeInfo p = n; p != null; p = p.getParent()) {
+                    if (p.isClickable()) return p;
+                }
+            }
+        }
+        for (int i = 0; i < n.getChildCount(); i++) {
+            AccessibilityNodeInfo r = findButtonContains(n.getChild(i), needles);
+            if (r != null) return r;
+        }
+        return null;
+    }
+
     static boolean sendGlobalAction(int action) {
         PowerService s = instance;
         return s != null && s.performGlobalAction(action);

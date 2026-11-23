@@ -388,7 +388,7 @@ public class MainActivity extends Activity {
             }
             return;
         }
-        // adb hook for screenshots: am start -n com.techgenius.tvoslauncher/.MainActivity --es panel cc|inputs|weather|recents
+        // adb hook for screenshots: am start -n com.techgenius.tvoslauncher/.MainActivity --es panel cc|inputs|weather|recents|power|ambient|present|search
         String panel = intent.getStringExtra("panel");
         if (panel != null) {
             closeMenu();
@@ -398,6 +398,7 @@ public class MainActivity extends Activity {
             if (panel.equals("cc")) showControlCenter();
             else if (panel.equals("recents")) RecentAppsOverlay.showInActivity(this);
             else if (panel.equals("inputs")) ControlPanelOverlay.showInputsOverlay(this);
+            else if (panel.equals("power")) ControlPanelOverlay.showPowerMenuOverlay(this);
             else if (panel.equals("weather")) showWeather();
             else if (panel.equals("present")) com.techgenius.tvoslauncher.present.Presenter.open(this);
             else if (panel.equals("search")) showSearch(intent.getStringExtra("q"));

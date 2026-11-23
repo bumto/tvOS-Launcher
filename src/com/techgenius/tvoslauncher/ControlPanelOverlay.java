@@ -46,7 +46,7 @@ import java.util.Set;
  * 1. Wi-Fi          | 2. Bluetooth
  * 3. Memory         | 4. Do Not Disturb
  * 5. Audio          | 6. Sleep Timer
- * 7. Ambient Mode   | 8. Power Off
+ * 7. Ambient Mode   | 8. Power
  * 9..12. 1x1 Icons: Inputs, Button Mapper, Settings, Search
  */
 public final class ControlPanelOverlay {
@@ -509,16 +509,10 @@ public final class ControlPanelOverlay {
                     }, false));
         }
         if (isItemEnabled(c, ITEM_POWER)) {
-            boolean nativePowerMenu = isPowerNativeMenuMode(c);
-            capsules.add(new CapsuleSpec("power", I18n.s(c, "Power Off", "Kapat"),
-                    () -> nativePowerMenu
-                            ? I18n.s(c, "Power Menu", "Güç Menüsü")
-                            : (hasCustomAction(c, ACTION_POWER)
-                                    ? getActionSummary(c, ACTION_POWER)
-                                    : I18n.s(c, "Screen Off", "Ekranı Kapat")),
+            capsules.add(new CapsuleSpec("power", "POWER", null,
                     v -> {
                         dismissAll(c);
-                        triggerPowerAction(c);
+                        showPowerMenuOverlay(c);
                     }, false));
         }
 
@@ -1612,6 +1606,203 @@ public final class ControlPanelOverlay {
         btnHomeSettings.requestFocus();
     }
 
+    /** tvOS-styled power menu: Shut Down, Reboot, Standby (plus a custom action when configured). */
+    public static void showPowerMenuOverlay(final Context c) {
+        PowerService svc = PowerService.instance;
+        WindowManager wm = svc != null ? (WindowManager) svc.getSystemService(Context.WINDOW_SERVICE) : null;
+        if (svc == null || wm == null) {
+            showPowerFallbackDialog(c);
+            return;
+        }
+        final float u = Ui.unit(svc);
+        final FrameLayout[] rootRef = new FrameLayout[1];
+        final List<View> rows = new ArrayList<>();
+        final Runnable closeSheet = () -> {
+            if (rootRef[0] != null) {
+                try { wm.removeViewImmediate(rootRef[0]); } catch (Exception ignored) {}
+                rootRef[0] = null;
+            }
+        };
+
+        FrameLayout backdrop = new FrameLayout(svc) {
+            @Override
+            public boolean dispatchKeyEvent(KeyEvent ev) {
+                MainActivity.navSound(svc, ev);
+                if (ev.getKeyCode() == KeyEvent.KEYCODE_BACK || ev.getKeyCode() == KeyEvent.KEYCODE_ESCAPE) {
+                    if (ev.getAction() == KeyEvent.ACTION_UP) closeSheet.run();
+                    return true;
+                }
+                return super.dispatchKeyEvent(ev);
+            }
+        };
+        backdrop.setBackgroundColor(isBlurryBgMode(svc) ? 0x66000000 : 0x33000000);
+        backdrop.setClickable(true);
+        backdrop.setOnClickListener(v -> closeSheet.run());
+        rootRef[0] = backdrop;
+
+        LinearLayout card = new LinearLayout(svc);
+        card.setOrientation(LinearLayout.VERTICAL);
+        card.setClipChildren(true);
+        card.setClipToPadding(true);
+        int pad = dp(u, 8);
+        card.setPadding(pad, pad, pad, pad);
+        GradientDrawable sbg = new GradientDrawable(
+                GradientDrawable.Orientation.TOP_BOTTOM,
+                isBlurryBgMode(svc)
+                        ? new int[]{0xED242028, 0xE61A171E}
+                        : new int[]{0xC81C181E, 0xB816141A});
+        sbg.setCornerRadius(dp(u, 18));
+        sbg.setStroke(Math.max(1, dp(u, 1)), 0x38FFFFFF);
+        card.setBackground(sbg);
+
+        View btnShutdown = makeOverlayGearOptionRow(
+                svc, u, "power",
+                I18n.s(svc, "Shut Down", "Kapat"), "",
+                () -> {
+                    closeSheet.run();
+                    performPowerAction(svc, true);
+                });
+        card.addView(btnShutdown);
+        rows.add(btnShutdown);
+
+        View btnReboot = makeOverlayGearOptionRow(
+                svc, u, "refresh",
+                I18n.s(svc, "Reboot", "Yeniden Başlat"), "",
+                () -> {
+                    closeSheet.run();
+                    performPowerAction(svc, false);
+                });
+        LinearLayout.LayoutParams rlp = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        rlp.topMargin = dp(u, 2);
+        card.addView(btnReboot, rlp);
+        rows.add(btnReboot);
+
+        View btnStandby = makeOverlayGearOptionRow(
+                svc, u, "ambient",
+                I18n.s(svc, "Standby", "Bekleme"), "",
+                () -> {
+                    closeSheet.run();
+                    performStandby(svc);
+                });
+        LinearLayout.LayoutParams slp = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        slp.topMargin = dp(u, 2);
+        card.addView(btnStandby, slp);
+        rows.add(btnStandby);
+
+        String customPkg = getCustomPkg(svc, ACTION_POWER);
+        if (customPkg != null && !customPkg.isEmpty()) {
+            View btnCustom = makeOverlayGearOptionRow(
+                    svc, u, "gear",
+                    getActionSummary(svc, ACTION_POWER), "",
+                    () -> {
+                        closeSheet.run();
+                        launchCustomAction(svc, ACTION_POWER);
+                    });
+            LinearLayout.LayoutParams clp = new LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+            clp.topMargin = dp(u, 2);
+            card.addView(btnCustom, clp);
+            rows.add(btnCustom);
+        }
+
+        for (int i = 0; i < rows.size(); i++) {
+            final int idx = i;
+            View r = rows.get(i);
+            r.setOnKeyListener((v, kc, ev) -> {
+                if (ev.getAction() != KeyEvent.ACTION_DOWN) return false;
+                if (kc == KeyEvent.KEYCODE_DPAD_UP) {
+                    rows.get((idx - 1 + rows.size()) % rows.size()).requestFocus();
+                    return true;
+                }
+                if (kc == KeyEvent.KEYCODE_DPAD_DOWN) {
+                    rows.get((idx + 1) % rows.size()).requestFocus();
+                    return true;
+                }
+                return false;
+            });
+        }
+
+        FrameLayout.LayoutParams cardLp = new FrameLayout.LayoutParams(
+                dp(u, 300), ViewGroup.LayoutParams.WRAP_CONTENT, Gravity.CENTER);
+        backdrop.addView(card, cardLp);
+
+        int flags = WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN;
+        if (isBlurryBgMode(svc) && android.os.Build.VERSION.SDK_INT >= 31) {
+            flags |= WindowManager.LayoutParams.FLAG_BLUR_BEHIND;
+        }
+        WindowManager.LayoutParams wlp = new WindowManager.LayoutParams(
+                WindowManager.LayoutParams.MATCH_PARENT,
+                WindowManager.LayoutParams.MATCH_PARENT,
+                WindowManager.LayoutParams.TYPE_ACCESSIBILITY_OVERLAY,
+                flags,
+                PixelFormat.TRANSLUCENT);
+        if (isBlurryBgMode(svc) && android.os.Build.VERSION.SDK_INT >= 31) {
+            try { wlp.setBlurBehindRadius(dp(u, 32)); } catch (Throwable ignored) {}
+        }
+        wm.addView(backdrop, wlp);
+        backdrop.setAlpha(0f);
+        card.setScaleX(0.94f);
+        card.setScaleY(0.94f);
+        backdrop.animate().alpha(1f).setDuration(180).start();
+        card.animate().scaleX(1f).scaleY(1f).setDuration(220).setInterpolator(MainActivity.LIFT).start();
+        btnShutdown.requestFocus();
+    }
+
+    private static void performPowerAction(final Context c, final boolean shutdown) {
+        new Thread(() -> {
+            String cmd = shutdown ? "reboot -p" : "reboot";
+            try {
+                String out = LocalAdb.execShellOutput(c, cmd);
+                if (out == null || (!out.contains("Permission denied") && !out.contains("not permitted"))) {
+                    return;
+                }
+            } catch (Throwable ignored) {
+            }
+            String[] needles = shutdown
+                    ? new String[]{"power off", "shut down", "shutdown", "matikan", "kapat",
+                            "\u00e9teindre", "apagar", "ausschalten", "\u5173\u673a", "\u95dc\u6a5f",
+                            "\u05db\u05d9\u05d1\u05d5\u05d9"}
+                    : new String[]{"restart", "reboot", "nyalakan ulang", "yeniden ba\u015flat",
+                            "red\u00e9marrer", "reiniciar", "neu starten", "\u91cd\u542f",
+                            "\u91cd\u65b0\u555f\u52d5", "\u05d4\u05e4\u05e2\u05dc\u05d4 \u05de\u05d7\u05d3\u05e9"};
+            if (!PowerService.showPowerDialogAndClick(needles)) {
+                MAIN.post(() -> Toast.makeText(c,
+                        I18n.s(c, "Enable Accessibility Service to use this action",
+                                "Bu eylemi kullanmak i\u00e7in Eri\u015filebilirlik Servisini etkinle\u015ftirin"),
+                        Toast.LENGTH_LONG).show());
+            }
+        }, "tvos-power-action").start();
+    }
+
+    private static void performStandby(Context c) {
+        if (!PowerService.sleep()) {
+            SleepReceiver.sleepNow(c);
+        }
+    }
+
+    private static void showPowerFallbackDialog(final Context c) {
+        if (c instanceof android.app.Activity) {
+            final android.app.Activity a = (android.app.Activity) c;
+            a.runOnUiThread(() -> new android.app.AlertDialog.Builder(
+                    a, android.R.style.Theme_DeviceDefault_Dialog_Alert)
+                    .setTitle("POWER")
+                    .setItems(new CharSequence[]{
+                            I18n.s(a, "Shut Down", "Kapat"),
+                            I18n.s(a, "Reboot", "Yeniden Ba\u015flat"),
+                            I18n.s(a, "Standby", "Bekleme")},
+                            (d, which) -> {
+                                if (which == 0) performPowerAction(a, true);
+                                else if (which == 1) performPowerAction(a, false);
+                                else performStandby(a);
+                            })
+                    .show());
+            return;
+        }
+        openNativePowerMenu(c);
+    }
+
     private static View makeOverlayGearOptionRow(
             Context c, float u, String glyphName, String title, String sub, Runnable onClick) {
         LinearLayout row = new LinearLayout(c);
@@ -1651,15 +1842,19 @@ public final class ControlPanelOverlay {
         t.setText(title);
         texts.addView(t);
 
-        TextView s = new TextView(c);
-        Ui.textSize(s, 9.5f);
-        s.setTypeface(Ui.font(c, "regular"));
-        s.setTextColor(0x9EF4F4F6);
-        s.setText(sub);
-        LinearLayout.LayoutParams slp = new LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-        slp.topMargin = dp(u, 1);
-        texts.addView(s, slp);
+        final TextView[] subRef = {null};
+        if (sub != null && !sub.isEmpty()) {
+            TextView s = new TextView(c);
+            Ui.textSize(s, 9.5f);
+            s.setTypeface(Ui.font(c, "regular"));
+            s.setTextColor(0x9EF4F4F6);
+            s.setText(sub);
+            LinearLayout.LayoutParams slp = new LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+            slp.topMargin = dp(u, 1);
+            texts.addView(s, slp);
+            subRef[0] = s;
+        }
 
         row.addView(texts, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
 
@@ -1668,7 +1863,7 @@ public final class ControlPanelOverlay {
             ibg.setColor(has ? 0x12000000 : 0x1FFFFFFF);
             iconIv.setImageBitmap(Glyphs.get(glyphName, dp(u, 16), has ? 0xFF111114 : 0xEBF4F4F6));
             t.setTextColor(has ? 0xFF111114 : 0xEBF4F4F6);
-            s.setTextColor(has ? 0x99000000 : 0x9EF4F4F6);
+            if (subRef[0] != null) subRef[0].setTextColor(has ? 0x99000000 : 0x9EF4F4F6);
         });
         row.setOnClickListener(v -> onClick.run());
         return row;
