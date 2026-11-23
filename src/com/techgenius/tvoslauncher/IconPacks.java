@@ -11,6 +11,7 @@ import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.graphics.Path;
+import android.graphics.RectF;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.util.Xml;
@@ -32,6 +33,11 @@ public final class IconPacks {
 
     private static final String PREF_NAME = "icon_pack";
     private static final String KEY_SELECTED = "selected";
+    private static final String KEY_SHAPE = "shape";
+    public static final String SHAPE_ORIGINAL = "original";
+    public static final String SHAPE_CIRCLE = "circle";
+    public static final String SHAPE_SQUIRCLE = "squircle";
+    public static final String SHAPE_ROUNDED = "rounded";
     private static final String BUILTIN_ASSET_DIR = "iconpacks/circo/";
     private static final String[] THEME_ACTIONS = {
             "org.adw.ActivityStarter.THEMES",
@@ -75,6 +81,20 @@ public final class IconPacks {
         CustomMedia.clearIconCache();
     }
 
+    public static String getShape(Context c) {
+        if (c == null) return SHAPE_CIRCLE;
+        String v = prefs(c).getString(KEY_SHAPE, SHAPE_CIRCLE);
+        if (SHAPE_ORIGINAL.equals(v) || SHAPE_SQUIRCLE.equals(v) || SHAPE_ROUNDED.equals(v)) return v;
+        return SHAPE_CIRCLE;
+    }
+
+    public static void setShape(Context c, String shape) {
+        if (c == null) return;
+        prefs(c).edit().putString(KEY_SHAPE, shape == null ? SHAPE_CIRCLE : shape).apply();
+        clearCaches();
+        CustomMedia.clearIconCache();
+    }
+
     public static boolean isActive(Context c) {
         return !getSelected(c).isEmpty();
     }
@@ -112,13 +132,13 @@ public final class IconPacks {
         }
         Pack pack = loadPack(c, getSelected(c));
         if (pack == null) return null;
+        String shape = getShape(c);
         Map<String, String> map = mappings(c, pack);
         String component = componentFromKey(key, pkg);
         String drawable = null;
         if (component != null) drawable = map.get(component);
         if (drawable == null) drawable = map.get("pkg:" + pkg);
-        Bitmap icon = null;
-        if (drawable != null) icon = loadDrawable(c, pack, drawable);
+        Bitmap icon = drawable == null ? null : applyShape(loadDrawable(c, pack, drawable), shape);
         if (icon == null) {
             Bitmap back = null;
             String backName = map.get("_iconback");
@@ -128,7 +148,7 @@ public final class IconPacks {
                 String s = map.get("_scale");
                 if (s != null) scale = Float.parseFloat(s);
             } catch (Throwable ignored) { }
-            icon = maskApplicationIcon(c, pkg, back, scale);
+            icon = maskApplicationIcon(c, pkg, back, scale, shape);
         }
         if (icon != null) {
             synchronized (ICON_CACHE) { ICON_CACHE.put(cacheKey, icon); }
@@ -312,14 +332,15 @@ public final class IconPacks {
         }
     }
 
-    private static Bitmap maskApplicationIcon(Context c, String pkg, Bitmap back, float scale) {
+    private static Bitmap maskApplicationIcon(Context c, String pkg, Bitmap back, float scale, String shape) {
         if (c == null || pkg == null || pkg.isEmpty()) return null;
         try {
             ApplicationInfo ai = c.getPackageManager().getApplicationInfo(pkg, 0);
             Drawable d = ai.loadIcon(c.getPackageManager());
             if (d == null) return null;
             Bitmap src = drawableToBitmap(d, 256);
-            return composeCircularIcon(src, back, 192, scale);
+            if (SHAPE_ORIGINAL.equals(shape)) return src;
+            return composeShapedIcon(src, back, 192, scale, shape);
         } catch (Throwable t) {
             return null;
         }
@@ -348,7 +369,32 @@ public final class IconPacks {
         return out;
     }
 
-    private static Bitmap composeCircularIcon(Bitmap src, Bitmap back, int size, float scale) {
+    private static Bitmap applyShape(Bitmap src, String shape) {
+        if (src == null || src.isRecycled() || SHAPE_ORIGINAL.equals(shape)) return src;
+        Bitmap trimmed = CustomMedia.trimTransparentPadding(src);
+        if (trimmed == null || trimmed.isRecycled() || trimmed.getWidth() <= 0 || trimmed.getHeight() <= 0) {
+            trimmed = src;
+        }
+        int size = 192;
+        Bitmap out = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888);
+        Canvas cv = new Canvas(out);
+        Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG | Paint.FILTER_BITMAP_FLAG);
+        cv.save();
+        cv.clipPath(shapePath(shape, size));
+        paint.setColor(0xFF24262E);
+        cv.drawRect(0, 0, size, size, paint);
+        float target = size * 0.94f;
+        float s = target / Math.max(trimmed.getWidth(), trimmed.getHeight());
+        float dw = trimmed.getWidth() * s;
+        float dh = trimmed.getHeight() * s;
+        float cx = size / 2f;
+        float cy = size / 2f;
+        cv.drawBitmap(trimmed, null, new RectF(cx - dw / 2f, cy - dh / 2f, cx + dw / 2f, cy + dh / 2f), paint);
+        cv.restore();
+        return out;
+    }
+
+    private static Bitmap composeShapedIcon(Bitmap src, Bitmap back, int size, float scale, String shape) {
         if (src == null || src.isRecycled()) return null;
         Bitmap trimmed = CustomMedia.trimTransparentPadding(src);
         if (trimmed == null || trimmed.isRecycled() || trimmed.getWidth() <= 0 || trimmed.getHeight() <= 0) {
@@ -358,24 +404,51 @@ public final class IconPacks {
         Canvas cv = new Canvas(out);
         float cx = size / 2f;
         float cy = size / 2f;
-        float radius = size * 0.48f;
         Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG | Paint.FILTER_BITMAP_FLAG);
+        cv.save();
+        cv.clipPath(shapePath(shape, size));
         if (back != null && !back.isRecycled()) {
-            cv.drawBitmap(back, null, new android.graphics.RectF(0, 0, size, size), paint);
+            cv.drawBitmap(back, null, new RectF(0, 0, size, size), paint);
         } else {
             paint.setColor(0xFF323232);
-            cv.drawCircle(cx, cy, radius, paint);
+            cv.drawRect(0, 0, size, size, paint);
         }
-        Path clip = new Path();
-        clip.addCircle(cx, cy, radius, Path.Direction.CW);
-        cv.save();
-        cv.clipPath(clip);
         float target = size * Math.max(0.35f, Math.min(1f, scale));
         float s = target / Math.max(trimmed.getWidth(), trimmed.getHeight());
         float dw = trimmed.getWidth() * s;
         float dh = trimmed.getHeight() * s;
-        cv.drawBitmap(trimmed, null, new android.graphics.RectF(cx - dw / 2f, cy - dh / 2f, cx + dw / 2f, cy + dh / 2f), paint);
+        cv.drawBitmap(trimmed, null, new RectF(cx - dw / 2f, cy - dh / 2f, cx + dw / 2f, cy + dh / 2f), paint);
         cv.restore();
         return out;
+    }
+
+    private static Path shapePath(String shape, float size) {
+        Path p = new Path();
+        float inset = size * 0.055f;
+        if (SHAPE_CIRCLE.equals(shape)) {
+            p.addCircle(size / 2f, size / 2f, size * 0.48f, Path.Direction.CW);
+            return p;
+        }
+        float l = inset;
+        float t = inset;
+        float r = size - inset;
+        float b = size - inset;
+        if (SHAPE_ROUNDED.equals(shape)) {
+            float radius = size * 0.22f;
+            p.addRoundRect(new RectF(l, t, r, b), radius, radius, Path.Direction.CW);
+            return p;
+        }
+        float k = size * 0.30f;
+        p.moveTo(l + k, t);
+        p.lineTo(r - k, t);
+        p.cubicTo(r - k * 0.45f, t, r, t + k * 0.45f, r, t + k);
+        p.lineTo(r, b - k);
+        p.cubicTo(r, b - k * 0.45f, r - k * 0.45f, b, r - k, b);
+        p.lineTo(l + k, b);
+        p.cubicTo(l + k * 0.45f, b, l, b - k * 0.45f, l, b - k);
+        p.lineTo(l, t + k);
+        p.cubicTo(l, t + k * 0.45f, l + k * 0.45f, t, l + k, t);
+        p.close();
+        return p;
     }
 }

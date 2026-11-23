@@ -2699,7 +2699,8 @@ final class SceneHome {
         if (CustomMedia.hasCustomAppIcon(host, a.key, a.pkg)) {
             Bitmap custom = CustomMedia.getCustomAppIcon(host, a.key, a.pkg);
             if (custom != null && !custom.isRecycled()) {
-                Bitmap scaled = ((custom.getPixel(0, 0) >>> 24) == 255)
+                boolean keepAlpha = !CustomMedia.hasUserAppIcon(host, a.key, a.pkg);
+                Bitmap scaled = (keepAlpha || (custom.getPixel(0, 0) >>> 24) == 255)
                         ? Bitmap.createScaledBitmap(custom, 192, 192, true)
                         : CustomMedia.prepareFullBleedAppIcon(custom, 192, 192);
                 if (cacheKey != null && scaled != null) {

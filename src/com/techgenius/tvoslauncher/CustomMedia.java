@@ -139,10 +139,15 @@ public final class CustomMedia {
         return new File(dir, safeKey(key, pkg) + ".png");
     }
 
-    public static boolean hasCustomAppIcon(Context c, String key, String pkg) {
+    public static boolean hasUserAppIcon(Context c, String key, String pkg) {
         if (c == null) return false;
         File f = iconFile(c, key, pkg);
-        if (f.exists() && f.length() > 0) return true;
+        return f.exists() && f.length() > 0;
+    }
+
+    public static boolean hasCustomAppIcon(Context c, String key, String pkg) {
+        if (c == null) return false;
+        if (hasUserAppIcon(c, key, pkg)) return true;
         return IconPacks.hasIcon(c, key, pkg);
     }
 

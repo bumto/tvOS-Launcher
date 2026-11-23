@@ -1278,6 +1278,19 @@ public class SettingsActivity extends Activity {
                     IconPacks.setSelected(this, "");
                     rebuildMainRows();
                 });
+        section(tr("ICON SHAPE", "SİMGE ŞEKLİ"));
+        row(tr("Shape", "Şekil"),
+                () -> iconShapeLabel(IconPacks.getShape(this)),
+                () -> {
+                    String curShape = IconPacks.getShape(this);
+                    String next;
+                    if (IconPacks.SHAPE_ORIGINAL.equals(curShape)) next = IconPacks.SHAPE_CIRCLE;
+                    else if (IconPacks.SHAPE_CIRCLE.equals(curShape)) next = IconPacks.SHAPE_SQUIRCLE;
+                    else if (IconPacks.SHAPE_SQUIRCLE.equals(curShape)) next = IconPacks.SHAPE_ROUNDED;
+                    else next = IconPacks.SHAPE_ORIGINAL;
+                    IconPacks.setShape(this, next);
+                    rebuildMainRows();
+                });
         section(tr("ICON PACKS", "SİMGE PAKETLERİ"));
         for (IconPacks.Pack p : IconPacks.list(this)) {
             final String id = p.id;
@@ -1289,8 +1302,15 @@ public class SettingsActivity extends Activity {
                 rebuildMainRows();
             });
         }
-        infoNote(tr("Installed ADW/Nova-compatible icon packs are listed here. Apps without a matching icon are masked into a circle.",
-                "Yüklü ADW/Nova uyumlu simge paketleri burada listelenir. Eşleşmeyen uygulamalar daireye dönüştürülür."));
+        infoNote(tr("Installed ADW/Nova-compatible icon packs are listed here. The shape applies to every themed icon, including apps without a matching icon.",
+                "Yüklü ADW/Nova uyumlu simge paketleri burada listelenir. Şekil, eşleşmeyen uygulamalar dahil tüm temalı simgelere uygulanır."));
+    }
+
+    private String iconShapeLabel(String shape) {
+        if (IconPacks.SHAPE_ORIGINAL.equals(shape)) return tr("Original", "Orijinal");
+        if (IconPacks.SHAPE_SQUIRCLE.equals(shape)) return tr("Squircle", "Squircle");
+        if (IconPacks.SHAPE_ROUNDED.equals(shape)) return tr("Rounded square", "Yuvarlatılmış kare");
+        return tr("Circle", "Daire");
     }
 
     /**
