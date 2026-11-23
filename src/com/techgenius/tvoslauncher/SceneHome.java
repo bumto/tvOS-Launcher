@@ -10,7 +10,6 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.LinearGradient;
 import android.graphics.Outline;
-import android.graphics.Path;
 import android.graphics.Paint;
 import android.graphics.Rect;
 import android.graphics.RectF;
@@ -1942,7 +1941,7 @@ final class SceneHome {
         boolean whiteCorners = isMore;
 
         if (isGear || isMore) {
-            Bitmap assetIcon = isGear ? makeSettingsDockIcon(192) : getSpecialDockIconBitmap("icons/Apps.png");
+            Bitmap assetIcon = getSpecialDockIconBitmap(isGear ? "icons/System Settings.png" : "icons/Apps.png");
             if (assetIcon != null) {
                 whiteCorners = hasWhiteCorners(assetIcon);
                 tile.setBackground(createSmoothSquircleDrawable(assetIcon, rad, 1.0f, isGear ? 0xFF707075 : 0xFFF2F2F4));
@@ -2891,27 +2890,6 @@ final class SceneHome {
             logoCache.put(assetPath, raw);
         }
         return raw;
-    }
-
-    Bitmap makeSettingsDockIcon(int size) {
-        String key = "scene:settings-icon";
-        Bitmap cached = logoCache.get(key);
-        if (cached != null) return cached;
-        Bitmap out = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888);
-        Canvas cv = new Canvas(out);
-        Paint p = new Paint(Paint.ANTI_ALIAS_FLAG | Paint.FILTER_BITMAP_FLAG);
-        float r = size * 0.22f;
-        Path path = new Path();
-        path.addRoundRect(new RectF(0, 0, size, size), r, r, Path.Direction.CW);
-        cv.clipPath(path);
-        p.setColor(0xFF2C2D33);
-        cv.drawRect(0, 0, size, size, p);
-        Bitmap gear = Glyphs.get("gear", Math.round(size * 0.52f), 0xFFF4F4F6);
-        if (gear != null) {
-            cv.drawBitmap(gear, (size - gear.getWidth()) / 2f, (size - gear.getHeight()) / 2f, p);
-        }
-        logoCache.put(key, out);
-        return out;
     }
 
     private static String mapPkgToLogoAsset(String pkg) {
