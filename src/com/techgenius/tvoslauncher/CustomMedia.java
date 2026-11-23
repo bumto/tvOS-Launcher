@@ -142,7 +142,8 @@ public final class CustomMedia {
     public static boolean hasCustomAppIcon(Context c, String key, String pkg) {
         if (c == null) return false;
         File f = iconFile(c, key, pkg);
-        return f.exists() && f.length() > 0;
+        if (f.exists() && f.length() > 0) return true;
+        return IconPacks.hasIcon(c, key, pkg);
     }
 
     public static Bitmap getCustomAppIcon(Context c, String key, String pkg) {
@@ -155,7 +156,7 @@ public final class CustomMedia {
             }
         }
         File f = iconFile(c, key, pkg);
-        if (!f.exists() || f.length() == 0) return null;
+        if (!f.exists() || f.length() == 0) return IconPacks.getIcon(c, key, pkg);
         try {
             Bitmap b = BitmapFactory.decodeFile(f.getAbsolutePath());
             if (b != null) {
@@ -165,7 +166,13 @@ public final class CustomMedia {
             }
             return b;
         } catch (Throwable t) {
-            return null;
+            return IconPacks.getIcon(c, key, pkg);
+        }
+    }
+
+    public static void clearIconCache() {
+        synchronized (ICON_CACHE) {
+            ICON_CACHE.clear();
         }
     }
 

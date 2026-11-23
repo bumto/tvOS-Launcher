@@ -1187,6 +1187,9 @@ public class SettingsActivity extends Activity {
             pageHiddenApps();
             return;
         }
+        row(tr("Icon pack", "Simge paketi"),
+                () -> IconPacks.labelFor(this, IconPacks.getSelected(this)) + "  " + chev(),
+                () -> openSubMenu("icon_pack"));
         row(tr("Hidden apps", "Gizlenen uygulamalar"),
                 () -> {
                     Set<String> hidden = Profiles.homePrefs(this).getStringSet(MainActivity.PREF_HIDDEN, Collections.emptySet());
@@ -1262,6 +1265,32 @@ public class SettingsActivity extends Activity {
                         () -> openSubMenu("nuvio_apps"));
             }
         }
+    }
+
+    private void subMenuIconPack() {
+        mainHeadView.setText(tr("Icon pack", "Simge paketi"));
+        backSubMenuRow();
+        String cur = IconPacks.getSelected(this);
+        choiceRow(tr("Original icons", "Orijinal simgeler"),
+                tr("Keep each app's own launcher icon", "Her uygulamanın kendi başlatıcı simgesini koru"),
+                cur.isEmpty(),
+                () -> {
+                    IconPacks.setSelected(this, "");
+                    rebuildMainRows();
+                });
+        section(tr("ICON PACKS", "SİMGE PAKETLERİ"));
+        for (IconPacks.Pack p : IconPacks.list(this)) {
+            final String id = p.id;
+            String sub = p.builtIn
+                    ? tr("Built-in · round icons · Apache-2.0", "Yerleşik · yuvarlak simgeler · Apache-2.0")
+                    : p.pkg;
+            choiceRow(p.label, sub, id.equals(cur), () -> {
+                IconPacks.setSelected(this, id);
+                rebuildMainRows();
+            });
+        }
+        infoNote(tr("Installed ADW/Nova-compatible icon packs are listed here. Apps without a matching icon are masked into a circle.",
+                "Yüklü ADW/Nova uyumlu simge paketleri burada listelenir. Eşleşmeyen uygulamalar daireye dönüştürülür."));
     }
 
     /**
@@ -2600,6 +2629,8 @@ public class SettingsActivity extends Activity {
             subMenuTopShelf();
         } else if ("nuvio_apps".equals(subId)) {
             subMenuNuvioApps();
+        } else if ("icon_pack".equals(subId)) {
+            subMenuIconPack();
         } else if (subId.startsWith("profile_actions:")) {
             subMenuProfileActions(subId.substring("profile_actions:".length()));
         } else if (subId.startsWith("cp_app:")) {
