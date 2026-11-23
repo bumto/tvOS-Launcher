@@ -358,7 +358,9 @@ public class MainActivity extends Activity {
                 reload(null);
             }
         };
-        registerReceiver(iconShapeReceiver, new IntentFilter(IconShape.ACTION_CHANGED));
+        IntentFilter iconFilter = new IntentFilter(IconShape.ACTION_CHANGED);
+        iconFilter.addAction(IconSize.ACTION_CHANGED);
+        registerReceiver(iconShapeReceiver, iconFilter);
         LocalAdb.ensureKeepAliveWatchdog(this);
         AppUpdater.cleanupUpdatesFolderOnStartup(this);
     }
@@ -1223,6 +1225,9 @@ public class MainActivity extends Activity {
         } else {
             iv.setScaleType(ImageView.ScaleType.FIT_CENTER);
             iv.setImageDrawable(a.icon);
+            float artScale = IconSize.factor(this);
+            iv.setScaleX(artScale);
+            iv.setScaleY(artScale);
             iconHost.addView(iv, inDock
                     ? match()
                     : new FrameLayout.LayoutParams(cardH * 55 / 100, cardH * 55 / 100, Gravity.CENTER));

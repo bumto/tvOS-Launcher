@@ -1940,13 +1940,14 @@ final class SceneHome {
         boolean isGear = GEAR_KEY.equals(a.key);
         boolean isMore = MORE_KEY.equals(a.key);
         float rad = IconShape.radius(host, height);
+        float iconFactor = IconSize.factor(host);
         boolean whiteCorners = isMore;
 
         if (isGear || isMore) {
             Bitmap assetIcon = getSpecialDockIconBitmap(isGear ? "icons/System Settings.png" : "icons/Apps.png");
             if (assetIcon != null) {
                 whiteCorners = hasWhiteCorners(assetIcon);
-                tile.setBackground(createSmoothSquircleDrawable(assetIcon, rad, 1.0f, isGear ? 0xFF707075 : 0xFFF2F2F4));
+                tile.setBackground(createSmoothSquircleDrawable(assetIcon, rad, iconFactor, isGear ? 0xFF707075 : 0xFFF2F2F4));
                 tile.setClipToOutline(false);
             } else {
                 GradientDrawable bg = new GradientDrawable();
@@ -1964,7 +1965,7 @@ final class SceneHome {
                     ? 0xFF141519 : (a.color != 0 ? a.color : 0xFF1A1C22);
             if (sq != null) {
                 whiteCorners = hasWhiteCorners(sq);
-                float z = hasCustom ? 1.0f : 1.05f;
+                float z = (hasCustom ? 1.0f : 1.05f) * iconFactor;
                 tile.setBackground(createSmoothSquircleDrawable(sq, rad, z, baseBg));
                 tile.setClipToOutline(false);
             } else {
@@ -1979,7 +1980,7 @@ final class SceneHome {
         // Zero elevation on dock tiles avoids Android's dark inner/outer shadow artifact bleeding through translucent Gear/More tiles
         tile.setElevation(0f);
 
-        int glyphSize = Math.max(dp(14), Math.round(dp(26) * scale));
+        int glyphSize = Math.max(dp(14), Math.round(dp(26) * scale * iconFactor));
         if (isGear && tile.getBackground() instanceof GradientDrawable) {
             ImageView iv = new ImageView(host);
             iv.setScaleType(ImageView.ScaleType.CENTER);
@@ -1994,8 +1995,8 @@ final class SceneHome {
             ImageView iv = new ImageView(host);
             iv.setScaleType(ImageView.ScaleType.CENTER_CROP);
             iv.setImageDrawable(a.icon);
-            iv.setScaleX(1.05f);
-            iv.setScaleY(1.05f);
+            iv.setScaleX(1.05f * iconFactor);
+            iv.setScaleY(1.05f * iconFactor);
             tile.addView(iv, host.match());
         }
 
@@ -2291,7 +2292,7 @@ final class SceneHome {
         final int cols = 5;
         final int cellW = dp(116);
         final int cellH = dp(102);
-        final int iconSz = dp(60);
+        final int iconSz = Math.min(cellW - dp(8), Math.round(dp(60) * IconSize.factor(host)));
         final int iconH = Math.round(iconSz * IconShape.aspect(host));
         final float iconRad = IconShape.radius(host, iconH);
         LinearLayout curRow = null;
@@ -2326,7 +2327,7 @@ final class SceneHome {
             int baseBg = (hasCustom || getSquareAppLogo(app.pkg) != null)
                     ? 0xFF141519 : (app.color != 0 ? app.color : 0xFF1A1C22);
             if (sq != null) {
-                float z = hasCustom ? 1.0f : 1.05f;
+                float z = (hasCustom ? 1.0f : 1.05f) * IconSize.factor(host);
                 iconBox.setBackground(createSmoothSquircleDrawable(sq, iconRad, z, baseBg));
             } else {
                 GradientDrawable ibg = new GradientDrawable();
@@ -2339,8 +2340,8 @@ final class SceneHome {
                     ImageView iv = new ImageView(host);
                     iv.setScaleType(ImageView.ScaleType.CENTER_CROP);
                     iv.setImageDrawable(app.icon);
-                    iv.setScaleX(1.05f);
-                    iv.setScaleY(1.05f);
+                    iv.setScaleX(1.05f * IconSize.factor(host));
+                    iv.setScaleY(1.05f * IconSize.factor(host));
                     iconBox.addView(iv, host.match());
                 }
             }

@@ -1190,6 +1190,9 @@ public class SettingsActivity extends Activity {
         row(tr("Icon shape", "Simge şekli"),
                 () -> iconShapeLabel(IconShape.get(this)) + "  " + chev(),
                 () -> openSubMenu("icon_shape"));
+        row(tr("Icon size", "Simge boyutu"),
+                () -> iconSizeLabel(IconSize.get(this)) + "  " + chev(),
+                () -> openSubMenu("icon_size"));
         row(tr("Hidden apps", "Gizlenen uygulamalar"),
                 () -> {
                     Set<String> hidden = Profiles.homePrefs(this).getStringSet(MainActivity.PREF_HIDDEN, Collections.emptySet());
@@ -1290,6 +1293,32 @@ public class SettingsActivity extends Activity {
             final String n = pair[1];
             choiceRow(n, null, k.equals(cur), () -> {
                 IconShape.set(this, k);
+                refreshAll();
+                rebuildMainRows();
+            });
+        }
+    }
+
+    private String iconSizeLabel(int pct) {
+        if (pct == IconSize.SMALL) return tr("Small (85%)", "Kecil (85%)");
+        if (pct == IconSize.LARGE) return tr("Large (115%)", "Besar (115%)");
+        if (pct == IconSize.EXTRA_LARGE) return tr("Extra large (130%)", "Sangat besar (130%)");
+        return tr("Default (100%)", "Varsayılan (100%)");
+    }
+
+    private void subMenuIconSize() {
+        mainHeadView.setText(tr("Icon size", "Simge boyutu"));
+        backSubMenuRow();
+        section(tr("ICON SIZE", "SİMGE BOYUTU"));
+        int cur = IconSize.get(this);
+        int[] opts = {IconSize.SMALL, IconSize.MEDIUM, IconSize.LARGE, IconSize.EXTRA_LARGE};
+        for (int pct : opts) {
+            String label = iconSizeLabel(pct);
+            String sub = pct == IconSize.MEDIUM
+                    ? tr("Standard icon artwork size", "Standart simge sanatı boyutu")
+                    : tr("Scale app artwork inside each tile", "Uygulama simgesini karo içinde ölçekler");
+            choiceRow(label, sub, cur == pct, () -> {
+                IconSize.set(this, pct);
                 refreshAll();
                 rebuildMainRows();
             });
@@ -2634,6 +2663,8 @@ public class SettingsActivity extends Activity {
             subMenuNuvioApps();
         } else if ("icon_shape".equals(subId)) {
             subMenuIconShape();
+        } else if ("icon_size".equals(subId)) {
+            subMenuIconSize();
         } else if (subId.startsWith("profile_actions:")) {
             subMenuProfileActions(subId.substring("profile_actions:".length()));
         } else if (subId.startsWith("cp_app:")) {
