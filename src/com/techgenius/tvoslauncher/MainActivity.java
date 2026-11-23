@@ -1185,27 +1185,37 @@ public class MainActivity extends Activity {
         tile.setFocusable(true);
         tile.setClickable(true);
         tile.setLongClickable(true);
-        GradientDrawable bg = new GradientDrawable();
-        bg.setCornerRadius(cardRadius);
-        bg.setColor(a.banner != null ? 0xFF1C1C1E : a.color);
-        tile.setBackground(bg);
-        tile.setOutlineProvider(roundedOutline(new float[]{cardRadius}));
-        tile.setClipToOutline(true);
+        FrameLayout iconHost = tile;
+        int iconSize = Math.min(cardW, cardH);
+        if (inDock) {
+            iconHost = new FrameLayout(this);
+            GradientDrawable circle = new GradientDrawable();
+            circle.setShape(GradientDrawable.OVAL);
+            circle.setColor(a.banner != null ? 0xFF1C1C1E : a.color);
+            iconHost.setBackground(circle);
+            iconHost.setOutlineProvider(ovalOutline());
+            iconHost.setClipToOutline(true);
+            tile.addView(iconHost, new FrameLayout.LayoutParams(iconSize, iconSize, Gravity.CENTER));
+        } else {
+            GradientDrawable bg = new GradientDrawable();
+            bg.setCornerRadius(cardRadius);
+            bg.setColor(a.banner != null ? 0xFF1C1C1E : a.color);
+            tile.setBackground(bg);
+            tile.setOutlineProvider(roundedOutline(new float[]{cardRadius}));
+            tile.setClipToOutline(true);
+        }
 
         ImageView iv = new ImageView(this);
         if (a.banner != null) {
             iv.setScaleType(ImageView.ScaleType.CENTER_CROP);
             iv.setImageDrawable(a.banner);
-            tile.addView(iv, match());
+            iconHost.addView(iv, match());
         } else {
             iv.setScaleType(ImageView.ScaleType.FIT_CENTER);
             iv.setImageDrawable(a.icon);
-            if (inDock) {
-                iv.setOutlineProvider(ovalOutline());
-                iv.setClipToOutline(true);
-            }
-            int s = cardH * 55 / 100;
-            tile.addView(iv, new FrameLayout.LayoutParams(s, s, Gravity.CENTER));
+            iconHost.addView(iv, inDock
+                    ? match()
+                    : new FrameLayout.LayoutParams(cardH * 55 / 100, cardH * 55 / 100, Gravity.CENTER));
         }
 
         // tvOS focus has no outline ring: a soft top sheen on the hardware-cached tile.
@@ -1213,7 +1223,8 @@ public class MainActivity extends Activity {
         topSheen.setBackground(new GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM,
                 new int[]{0x1AFFFFFF, 0x00FFFFFF}));
         topSheen.setAlpha(0f);
-        tile.addView(topSheen, new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, cardH / 2, Gravity.TOP));
+        iconHost.addView(topSheen, new FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, (inDock ? iconSize : cardH) / 2, Gravity.TOP));
 
         TextView label = text(15, Ui.font(this, "medium"), 0f);
         label.setText(a.label);
