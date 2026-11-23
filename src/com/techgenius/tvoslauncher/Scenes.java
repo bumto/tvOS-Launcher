@@ -946,11 +946,28 @@ public final class Scenes {
             boolean isOpaqueJpeg = lower.endsWith(".jpg") || lower.endsWith(".jpeg");
             opts.inPreferredConfig = isOpaqueJpeg ? Bitmap.Config.RGB_565 : Bitmap.Config.ARGB_8888;
             try (InputStream is = openAssetStream(c, assetPath)) {
-                return BitmapFactory.decodeStream(is, null, opts);
+                return clampBitmap(BitmapFactory.decodeStream(is, null, opts), reqW, reqH);
             }
         } catch (Exception e) {
             return null;
         }
+    }
+
+    /**
+     * Keeps decoded bitmaps close to the requested cover size so full-screen scenes use less RAM.
+     * Never shrinks a bitmap below the size needed to cover the target without upscaling in the
+     * dimension that fills the screen (so portrait or panorama wallpapers keep their detail).
+     */
+    private static Bitmap clampBitmap(Bitmap b, int maxW, int maxH) {
+        if (b == null || maxW <= 0 || maxH <= 0) return b;
+        int w = b.getWidth(), h = b.getHeight();
+        float s = Math.min(1f, Math.max(maxW / (float) w, maxH / (float) h));
+        if (s >= 0.98f) return b;
+        int nw = Math.max(1, Math.round(w * s));
+        int nh = Math.max(1, Math.round(h * s));
+        Bitmap out = Bitmap.createScaledBitmap(b, nw, nh, true);
+        if (out != b) b.recycle();
+        return out;
     }
 
     /**
@@ -1380,17 +1397,17 @@ public final class Scenes {
                 ls.customFgTs = fgTs;
                 ls.ownsBg = false;
                 ls.ownsFg = false;
-                ls.bg = CustomMedia.getCustomSceneWallpaper(c, cSlot, 1920, 1080);
+                ls.bg = CustomMedia.getCustomSceneWallpaper(c, cSlot, 1280, 720);
                 if (ls.bg == null) {
                     ls.ownsBg = true;
-                    ls.bg = loadAssetBitmap(c, ALL[0].bgAsset, 1920, 1080);
+                    ls.bg = loadAssetBitmap(c, ALL[0].bgAsset, 1280, 720);
                 }
-                ls.fg = CustomMedia.getCustomSceneForeground(c, cSlot, 1920, 1080);
+                ls.fg = CustomMedia.getCustomSceneForeground(c, cSlot, 1280, 720);
                 bakeLoadedGlassFromBg(ls, false);
                 return ls;
             }
             if (REDDIT_WALLPAPER_ID.equals(base)) {
-                Bitmap rBmp = CustomMedia.getRedditWallpaperBitmap(c, CustomMedia.SCOPE_SCENE, 1920, 1080);
+                Bitmap rBmp = CustomMedia.getRedditWallpaperBitmap(c, CustomMedia.SCOPE_SCENE, 1280, 720);
                 long rTs = CustomMedia.getRedditWallpaperTimestamp(c, CustomMedia.SCOPE_SCENE);
                 LoadedScene ls = new LoadedScene(REDDIT_WALLPAPER_SPEC);
                 if (rBmp != null && !rBmp.isRecycled()) {
@@ -1400,7 +1417,7 @@ public final class Scenes {
                 } else {
                     ls.customTs = -1L;
                     ls.ownsBg = true;
-                    ls.bg = loadAssetBitmap(c, ALL[0].bgAsset, 1920, 1080);
+                    ls.bg = loadAssetBitmap(c, ALL[0].bgAsset, 1280, 720);
                 }
                 bakeLoadedGlassFromBg(ls, false);
                 return ls;
@@ -1410,10 +1427,10 @@ public final class Scenes {
                 LoadedScene ls = new LoadedScene(LOCK_CUSTOM_SPEC);
                 ls.customTs = ts;
                 ls.ownsBg = false;
-                ls.bg = CustomMedia.getCustomLockWallpaper(c, 1920, 1080);
+                ls.bg = CustomMedia.getCustomLockWallpaper(c, 1280, 720);
                 if (ls.bg == null) {
                     ls.ownsBg = true;
-                    ls.bg = loadAssetBitmap(c, ALL[0].bgAsset, 1920, 1080);
+                    ls.bg = loadAssetBitmap(c, ALL[0].bgAsset, 1280, 720);
                 }
                 bakeLoadedGlassFromBg(ls, false);
                 return ls;
@@ -1426,9 +1443,9 @@ public final class Scenes {
                 LoadedScene ls = new LoadedScene(spec);
                 ls.customTs = System.currentTimeMillis();
                 ls.ownsBg = true;
-                ls.bg = CustomMedia.getNextShuffledFolderBitmap(c, scope, 1920, 1080, true);
+                ls.bg = CustomMedia.getNextShuffledFolderBitmap(c, scope, 1280, 720, true);
                 if (ls.bg == null) {
-                    ls.bg = loadAssetBitmap(c, ALL[0].bgAsset, 1920, 1080);
+                    ls.bg = loadAssetBitmap(c, ALL[0].bgAsset, 1280, 720);
                 }
                 bakeLoadedGlassFromBg(ls, false);
                 return ls;
@@ -1436,12 +1453,12 @@ public final class Scenes {
             Spec spec = byId(base);
             LoadedScene ls = new LoadedScene(spec);
             if (base.startsWith("grad:")) {
-                ls.bg = createGradientBitmap(base, 1920, 1080);
+                ls.bg = createGradientBitmap(base, 1280, 720);
             } else {
-                ls.bg = loadAssetBitmap(c, spec.bgAsset, 1920, 1080);
+                ls.bg = loadAssetBitmap(c, spec.bgAsset, 1280, 720);
             }
             if (spec.fgAsset != null) {
-                ls.fg = loadAssetBitmap(c, spec.fgAsset, 1920, 1080);
+                ls.fg = loadAssetBitmap(c, spec.fgAsset, 1280, 720);
             }
             if (spec.glassAsset != null) {
                 Bitmap rawGlass = loadAssetBitmap(c, spec.glassAsset, 480, 270);
@@ -1494,7 +1511,7 @@ public final class Scenes {
                 return ls;
             }
             if (REDDIT_WALLPAPER_ID.equals(base)) {
-                Bitmap rBmp = CustomMedia.getRedditWallpaperBitmap(c, CustomMedia.SCOPE_SCENE, 1920, 1080);
+                Bitmap rBmp = CustomMedia.getRedditWallpaperBitmap(c, CustomMedia.SCOPE_SCENE, 1280, 720);
                 long rTs = CustomMedia.getRedditWallpaperTimestamp(c, CustomMedia.SCOPE_SCENE);
                 if (ls != null && ls.bg != null && !ls.bg.isRecycled()
                         && ((rBmp != null && ls.bg == rBmp && ls.customTs == rTs)
@@ -1510,7 +1527,7 @@ public final class Scenes {
                 } else {
                     ls.customTs = -1L;
                     ls.ownsBg = true;
-                    ls.bg = loadAssetBitmap(c, ALL[0].bgAsset, 1920, 1080);
+                    ls.bg = loadAssetBitmap(c, ALL[0].bgAsset, 1280, 720);
                     CustomMedia.fetchNextRedditWallpaperAsync(c, CustomMedia.SCOPE_SCENE, () -> {
                         cache.remove(id);
                         cachedFrameKey = null;
