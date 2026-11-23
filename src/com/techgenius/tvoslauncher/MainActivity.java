@@ -1218,14 +1218,16 @@ public class MainActivity extends Activity {
         }
 
         ImageView iv = new ImageView(this);
+        float artScale = IconSize.factor(this);
         if (a.banner != null) {
             iv.setScaleType(ImageView.ScaleType.CENTER_CROP);
             iv.setImageDrawable(a.banner);
+            iv.setScaleX(artScale);
+            iv.setScaleY(artScale);
             iconHost.addView(iv, match());
         } else {
             iv.setScaleType(ImageView.ScaleType.FIT_CENTER);
             iv.setImageDrawable(a.icon);
-            float artScale = IconSize.factor(this);
             iv.setScaleX(artScale);
             iv.setScaleY(artScale);
             iconHost.addView(iv, inDock
